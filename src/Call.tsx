@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useRef, useState } from "react";
 import socket from "./Socket"; // Your socket setup here
 
@@ -352,7 +351,7 @@ const MultiCall = () => {
 				style={{ width: "300px" }}
 			/>
 			<h3>Canvas used for filter</h3>
-			<canvas ref={canvasRef}></canvas>
+			<canvas style={{ width: '300px' }} ref={canvasRef}></canvas>
 		</div>
 	);
 };

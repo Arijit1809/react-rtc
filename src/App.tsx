@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import socket from './Socket'
 import './App.scss'
 import { useEffect } from 'react'
