@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import socket from "./Socket"; // Your socket setup here
+import VideoTile from "./VideoTile";
 
 //? BASIC ICE CONFIG - ONLY WORKS LOCALLY DUE TO NAT
-// const iceConfig = {
-// 	iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-// };
+const iceConfigGoogleSTUN = {
+	iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
 
 //? ADVANCED ICE CONFIG - WORKS LOCALLY AND INTERNET
-const iceConfig = {
+const iceConfigOpenRelayTURN = {
 	iceServers: [
 		{
 			urls: "stun:stun.relay.metered.ca:80",
@@ -35,17 +36,24 @@ const iceConfig = {
 	],
 }
 
+// const iceConfig = iceConfigOpenRelayTURN;
+const iceConfig = iceConfigGoogleSTUN;
+
 type PeerID = number;
 
 const users: { id: PeerID, name: string, color: string }[] = [
 	{ id: 1, name: 'Bob', color: 'red' },
 	{ id: 2, name: 'Alice', color: 'blue' },
-	{ id: 3, name: 'Charlie', color: 'green' },
-	{ id: 4, name: 'David', color: 'yellow' },
+	// { id: 3, name: 'Charlie', color: 'green' },
+	// { id: 4, name: 'David', color: 'yellow' },
 ];
 
-const getUserName = (id: PeerID) => {
+export const getUserName = (id: PeerID) => {
 	return users.find(user => user.id === id)?.name || 'Unknown User';
+}
+
+export const getUser = (id: PeerID) => {
+	return users.find(user => user.id === id);
 }
 
 function changeTabTitle(newTitle: string) {
@@ -175,16 +183,16 @@ const MultiCall = () => {
 				localVideoRef.current.srcObject = stream;
 			}
 
-			if (!videoRef.current || !canvasRef.current) return
+			// if (!videoRef.current || !canvasRef.current) return
 
 			// Apply filter to the video stream before assigning it
 			// const filteredStream = await applyVideoFilter(stream.getVideoTracks()[0], "grayscale");
 
 			// Apply text overlay
-			const streamWithText = applyTextOverlay(videoRef.current, canvasRef.current, stream.getVideoTracks()[0], getUserName(peerId));
+			// const streamWithText = applyTextOverlay(videoRef.current, canvasRef.current, stream.getVideoTracks()[0], getUserName(peerId));
 			if (localVideoRef.current) {
 				if (localVideoRef.current) {
-					localVideoRef.current.srcObject = streamWithText; // Use the filtered stream
+					localVideoRef.current.srcObject = stream; // Use the filtered stream
 				}
 			}
 
@@ -317,29 +325,32 @@ const MultiCall = () => {
 			const userChosen = users.find(user => user.id === myPeerId)
 			return (
 				<div className="local-user">
-					<div>Joined as {userChosen?.name ?? ""}</div>
-					<button onClick={() => {
+					<h3>Joined as {userChosen?.name ?? ""}</h3>
+					{peers.length === 0 && <button onClick={() => {
 						console.log('emitting that I have joined')
 						socket.emit("start-call", myPeerId)
 					}}>
 						Start Call
-					</button>
+					</button>}
 				</div>
 			)
 		} else {
 			return (
-				<div className="join-buttons">
-					{users.map((user) => <div key={user.id}>
-						<button
-							onClick={() => {
-								const localPeerId = user.id
-								getLocalStream(localPeerId)
-								setMyPeerId(localPeerId)
-								changeTabTitle(getUserName(localPeerId))
-								socket.emit("join-call", localPeerId)
-							}}
-						>Join as {user.name}</button>
-					</div>)}
+				<div className="join-buttons-cntnr">
+					<h2>Select One</h2>
+					<div className="join-buttons">
+						{users.map((user) => <div key={user.id}>
+							<button
+								onClick={() => {
+									const localPeerId = user.id
+									getLocalStream(localPeerId)
+									setMyPeerId(localPeerId)
+									changeTabTitle(getUserName(localPeerId))
+									socket.emit("join-call", localPeerId)
+								}}
+							>Join as {user.name}</button>
+						</div>)}
+					</div>
 				</div>
 			)
 		}
@@ -347,9 +358,9 @@ const MultiCall = () => {
 
 	return (
 		<div className="multi-call">
-			<button className="log-peers" onClick={() => { console.log(peers) }}>
+			{/* <button className="log-peers" onClick={() => { console.log(peers) }}>
 				Log Peers
-			</button>
+			</button> */}
 			{joinButtons()}
 			<div className="video-grid">
 				<div>
@@ -372,7 +383,7 @@ const MultiCall = () => {
 					))}
 				</div>
 			</div>
-			<h3>Video used for filter</h3>
+			{/* <h3>Video used for filter</h3>
 			<video
 				ref={videoRef}
 				className="local-video-tile"
@@ -381,30 +392,10 @@ const MultiCall = () => {
 				style={{ width: "300px" }}
 			/>
 			<h3>Canvas used for filter</h3>
-			<canvas style={{ width: '300px' }} ref={canvasRef}></canvas>
+			<canvas style={{ width: '300px' }} ref={canvasRef}></canvas> */}
 		</div>
 	);
 };
-
-const VideoTile = ({ peer }: { peer: Peer }) => {
-	const peerId = peer.peerId
-	const name = getUserName(peerId)
-	const user = users.find(user => user.id === peerId)
-	return (
-		<div className="remote-video-tile"
-			style={{ backgroundColor: user?.color }}
-		>
-			<h3>{name}</h3>
-			{peer.remoteStream && (
-				<video
-					ref={(ref) => ref && (ref.srcObject = peer.remoteStream)}
-					autoPlay
-					className="remote-video"
-				/>
-			)}
-		</div>
-	)
-}
 
 export default MultiCall;
 
@@ -445,6 +436,7 @@ class Peer {
 
 		// Handle remote tracks
 		this.rtcConnection.ontrack = (event: RTCTrackEvent) => {
+			console.log('ontrack event', getUserName(this.peerId), event)
 			if (!this.remoteStream) {
 				this.remoteStream = new MediaStream();
 			}
@@ -461,6 +453,7 @@ class Peer {
 
 		// Handle ICE candidates
 		this.rtcConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+			console.log('onicecandidate', getUserName(this.peerId), event)
 			if (event.candidate) {
 				this.iceCandidates.push(event.candidate);
 
@@ -472,6 +465,23 @@ class Peer {
 				});
 			}
 		};
+
+		this.rtcConnection.oniceconnectionstatechange = () => {
+			console.log('oniceconnectionstatechange', getUserName(this.peerId), this.rtcConnection.iceConnectionState)
+		};
+
+		this.rtcConnection.onconnectionstatechange = () => {
+			console.log('onconnectionstatechange', getUserName(this.peerId), this.rtcConnection.connectionState)
+			if (this.rtcConnection.connectionState === 'failed') {
+				console.warn(`Connection with ${this.peerId} failed. Attempting to reconnect...`);
+				// this.restartIce();
+			}
+		};
+	}
+	restartIce(): void {
+		this.rtcConnection.restartIce();
+		this.iceCandidates = [];
+		console.log(`ICE Restart initiated for peer ${this.peerId}`);
 	}
 
 	// Create an SDP offer
@@ -511,3 +521,5 @@ class Peer {
 		this.remoteStream = stream;
 	}
 }
+
+export { Peer }
