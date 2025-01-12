@@ -13,7 +13,7 @@ declare global {
 }
 
 function App() {
-  console.log(socket.id)
+  console.log('Socket ID: ', socket.id)
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ function App() {
   return (
     <div className='app'>
       {/* <Call /> */}
-      <MultiCall/>
+      <MultiCall />
     </div>
   )
 }

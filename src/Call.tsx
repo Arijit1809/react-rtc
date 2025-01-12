@@ -1,9 +1,39 @@
 import { useEffect, useRef, useState } from "react";
 import socket from "./Socket"; // Your socket setup here
 
+//? BASIC ICE CONFIG - ONLY WORKS LOCALLY DUE TO NAT
+// const iceConfig = {
+// 	iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+// };
+
+//? ADVANCED ICE CONFIG - WORKS LOCALLY AND INTERNET
 const iceConfig = {
-	iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-};
+	iceServers: [
+		{
+			urls: "stun:stun.relay.metered.ca:80",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80",
+			username: "3d55ed434071d63c3fc15285",
+			credential: "zYll+T1ckVz3mX+E",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80?transport=tcp",
+			username: "3d55ed434071d63c3fc15285",
+			credential: "zYll+T1ckVz3mX+E",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:443",
+			username: "3d55ed434071d63c3fc15285",
+			credential: "zYll+T1ckVz3mX+E",
+		},
+		{
+			urls: "turns:global.relay.metered.ca:443?transport=tcp",
+			username: "3d55ed434071d63c3fc15285",
+			credential: "zYll+T1ckVz3mX+E",
+		},
+	],
+}
 
 type PeerID = number;
 
@@ -158,8 +188,8 @@ const MultiCall = () => {
 				}
 			}
 
-			// localStream.current = stream;
-			localStream.current = streamWithText;
+			localStream.current = stream;
+			// localStream.current = streamWithText;
 		} catch (error) {
 			console.error("Error accessing media devices.", error);
 		}
