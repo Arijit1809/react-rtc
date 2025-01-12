@@ -372,6 +372,7 @@ const MultiCall = () => {
 						<video
 							ref={localVideoRef}
 							autoPlay
+							playsInline
 							muted
 							style={{ width: "300px" }}
 						/>
@@ -389,6 +390,7 @@ const MultiCall = () => {
 				className="local-video-tile"
 				autoPlay
 				muted
+				playsInline
 				style={{ width: "300px" }}
 			/>
 			<h3>Canvas used for filter</h3>

@@ -19,6 +19,7 @@ const VideoTile = ({ peer }: { peer: Peer }) => {
 				<video
 					ref={(ref) => ref && (ref.srcObject = peer.remoteStream)}
 					autoPlay
+					playsInline
 					className="remote-video"
 				/>
 			)}
