@@ -363,7 +363,7 @@ const MultiCall = () => {
 	return (
 		<div className="multi-call">
 			{joinButtons()}
-			<select onChange={async (e) => { 
+			{devices.length > 0 && <select onChange={async (e) => {
 				const deviceId = e.target.value
 				const device = devices.find(device => device.deviceId === deviceId)
 				console.log(device)
@@ -378,7 +378,7 @@ const MultiCall = () => {
 						{device.label}
 					</option>
 				))}
-			</select>
+			</select>}
 			<div className="video-grid">
 				<div>
 					<div
