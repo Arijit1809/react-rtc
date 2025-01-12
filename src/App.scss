@@ -18,6 +18,8 @@ body {
     align-items: center;
 }
 
+
+
 .video-grid {
     display: flex;
     flex-direction: row;
@@ -91,6 +93,7 @@ body {
         display: block;
         border-radius: 15px;
         overflow: hidden;
+        transform: rotateY(180deg);
     }
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import socket from "./Socket"; // Your socket setup here
 import VideoTile from "./VideoTile";
+import { getAvailableMediaDevices, updateVideoTrackForAllPeers } from "./helpers";
 
 //? BASIC ICE CONFIG - ONLY WORKS LOCALLY DUE TO NAT
 const iceConfigGoogleSTUN = {
@@ -148,7 +149,7 @@ const MultiCall = () => {
 	const localVideoRef = useRef<HTMLVideoElement | null>(null);
 	const [peers, setPeers] = useState<Peer[]>([]); // Store peer objects
 	const [myPeerId, setMyPeerId] = useState<PeerID | null>(null);
-
+	const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
 
 	//? FOR FILTER VIDEO ELEMENT
 	const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -173,6 +174,9 @@ const MultiCall = () => {
 
 	//*ADVANCED FILTER VERSION
 	const getLocalStream = async (peerId: PeerID) => {
+		const devices = await getAvailableMediaDevices()
+		setDevices(devices.videoInput)
+		console.log(devices)
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
 				video: true,
@@ -358,10 +362,23 @@ const MultiCall = () => {
 
 	return (
 		<div className="multi-call">
-			{/* <button className="log-peers" onClick={() => { console.log(peers) }}>
-				Log Peers
-			</button> */}
 			{joinButtons()}
+			<select onChange={async (e) => { 
+				const deviceId = e.target.value
+				const device = devices.find(device => device.deviceId === deviceId)
+				console.log(device)
+				const stream = await updateVideoTrackForAllPeers(peers, deviceId)
+				localVideoRef.current!.srcObject = stream
+			}}>
+				{devices.map((device) => (
+					<option
+						key={device.deviceId}
+						value={device.deviceId}
+					>
+						{device.label}
+					</option>
+				))}
+			</select>
 			<div className="video-grid">
 				<div>
 					<div
@@ -521,6 +538,27 @@ class Peer {
 
 	updateRemoteStream(stream: MediaStream) {
 		this.remoteStream = stream;
+	}
+
+	// Function to update the local video track in the current peer connection
+	// Function to update the video track in the current peer connection using replaceTrack
+	async updateVideoTrack(newStream: MediaStream): Promise<void> {
+		const newVideoTrack = newStream.getVideoTracks()[0];
+		const currentVideoTrack = this.localStream!.getVideoTracks()[0];
+
+		// If the track is different, replace it
+		if (currentVideoTrack && newVideoTrack && currentVideoTrack.id !== newVideoTrack.id) {
+			// Replace the old video track with the new one
+			this.rtcConnection.getSenders().forEach(sender => {
+				if (sender.track && sender.track.kind === 'video') {
+					sender.replaceTrack(newVideoTrack);
+					console.log('Replaced video track for the current peer connection.');
+				}
+			});
+
+			// Optionally, update your local stream reference
+			this.localStream = newStream;
+		}
 	}
 }
 

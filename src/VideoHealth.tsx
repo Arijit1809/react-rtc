@@ -29,18 +29,20 @@ const VideoHealth: React.FC<VideoHealthProps> = ({ rtcConnection }) => {
 			let width = 0;
 			let height = 0;
 			let frameRate = 0;
-			console.log(stats)
+			// console.log(stats)
 			const reports: any[] = []
+			// printOutboundRTPStats(stats)
 			stats.forEach((report) => {
 				reports.push(report)
+
 				if (report.type === 'media-source' && report.kind === 'video') {
-					console.log(report)
+					// console.log(report)
 					width = report.width || 0;
 					height = report.height || 0;
 					frameRate = report.framesPerSecond || 0;
 				}
 			});
-			console.log(reports)
+			// console.log(reports)
 			// Get resolution label
 			const resolutionLabel = getResolutionLabel(width, height);
 
@@ -60,3 +62,40 @@ const VideoHealth: React.FC<VideoHealthProps> = ({ rtcConnection }) => {
 };
 
 export default VideoHealth;
+
+function printOutboundRTPStats(report: RTCStatsReport) {
+	const networkStats = {
+		packetsReceived: 0,
+		fractionLost: 0,
+		jitter: 0,
+		roundTripTime: 0,
+	};
+	for (const [key, value] of report) {
+		if (value.type === "outbound-rtp") {
+			const s = value as RTCOutboundRtpStreamStats;
+			console.log("------ Outbound RTP Stats ------");
+			console.log(`Packets Sent: ${s.packetsSent}`);
+			console.log(`Bytes Sent: ${s.bytesSent}`);
+			console.log(`Target Bitrate: ${s.targetBitrate}`);
+			console.log("--------------------------------");
+		} else if (value.type === "remote-outbound-rtp") {
+			console.log("------ Remote Outbound RTP Stats ------");
+			console.log(`Packets Sent: ${value.packetsSent}`);
+			console.log(`Bytes Sent: ${value.bytesSent}`);
+			console.log(`Target Bitrate: ${value.targetBitrate}`);
+			console.log(`Fraction Lost: ${value.fractionLost}`);
+			console.log(`Jitter: ${value.jitter}`);
+			console.log(`Round Trip Time: ${value.roundTripTime}`);
+			console.log("---------------------------------------");
+		}
+		if (value.type === "remote-inbound-rtp" && value.kind === "video") {
+			console.log('remote-inbound-rtp', value)
+			const v = value as RTCInboundRtpStreamStats;
+			networkStats.packetsReceived = value.packetsReceived;
+			networkStats.fractionLost = value.fractionLost;
+			networkStats.jitter = value.jitter;
+			networkStats.roundTripTime = value.roundTripTime;
+		}
+	}
+	console.log(networkStats)
+}
