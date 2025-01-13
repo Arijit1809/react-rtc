@@ -45,7 +45,7 @@ type PeerID = number;
 const users: { id: PeerID, name: string, color: string }[] = [
 	{ id: 1, name: 'Bob', color: 'red' },
 	{ id: 2, name: 'Alice', color: 'blue' },
-	// { id: 3, name: 'Charlie', color: 'green' },
+	{ id: 3, name: 'Charlie', color: 'green' },
 	// { id: 4, name: 'David', color: 'yellow' },
 ];
 
@@ -231,12 +231,26 @@ const MultiCall = () => {
 			handleIceCandidate(candidate);
 		});
 
+		socket.on("peer-disconnected", (peerId: string) => {
+			// p.peerId === parseInt(peerId as unknown as string)
+			console.log(`Peer disconnected: ${getUserName(parseInt(peerId))}`);
+			const newPeers = peers.filter(p => {
+				if (p.peerId === parseInt(peerId)) {
+					p.rtcConnection.close()
+					return false
+				}
+				return true
+			})
+			setPeers(newPeers)
+		});
+
 		return () => {
 			// Cleanup listeners to avoid duplicates
 			socket.off("new-peer");
 			socket.off("offer");
 			socket.off("answer");
 			socket.off("ice-candidate");
+			socket.off("peer-disconnected");
 		};
 	}, [myPeerId, peers]);
 
